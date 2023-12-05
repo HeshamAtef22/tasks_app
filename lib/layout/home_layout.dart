@@ -14,8 +14,7 @@ import '../modules/screens/tasks.dart';
 class HomeLayOut extends StatelessWidget {
 
 
-  //متغير لتمرير وحفظ الدات بيز بداخله
-  late Database database;
+
 
   // كاي للسكافولد لعمل بوتن شيت
   var scaffoldKey = GlobalKey<ScaffoldState>();
@@ -23,11 +22,7 @@ class HomeLayOut extends StatelessWidget {
   //فورم كاي لعمل فالديت للفورمفيلد
   var formKey = GlobalKey<FormState>();
 
-  //متغير للتحكم في ظهور واخفاء البوتن شيت
-  bool isBottomSheetShow = false;
 
-  //متغير للتحكم في ايقون البوتن شيت
-  IconData fabIcon = Icons.edit;
 
   // متغيرات للكنترول ع التيكست فيلد
   var titleController = TextEditingController();
@@ -49,10 +44,12 @@ class HomeLayOut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => AppCupit(),
+      create: (context) => AppCupit()..createDatabase(),
       child: BlocConsumer<AppCupit, AppStates>(
         listener: (context, state) {
-          // TODO: implement listener
+          if(state is AppInsertDataBaseState){
+            Navigator.pop(context);
+          }
         },
         builder: (context, state) {
 
@@ -61,16 +58,17 @@ class HomeLayOut extends StatelessWidget {
           return Scaffold(
             key: scaffoldKey,
             floatingActionButton: FloatingActionButton(
-                child: Icon(fabIcon),
+                child: Icon(cubit.fabIcon),
                 onPressed: () {
                   /*//هخليه يعمل انسيرت  للداتا لما اضغط ع البوتن
             insertToDatabase();*/
 
                   //هعمل شرط هنا علشان اقدر افتح البوتن شيت واقفله من الضغط ع البوتن
-                  if (isBottomSheetShow) {
+                  if (cubit.isBottomSheetShow) {
                     //هقوله هنا لو الفالديت اتنفذ اقفل البوتن شيت
                     if (formKey.currentState!.validate()) {
-                      //وبعد ماتنفذ الفالديت وتقفل البوتن شيت هخليه يعملي انسيرت للبيانات دي داخل الداتا بيز بتاعتي
+                      cubit.insertToDatabase(title: titleController.text, date: timeController.text, time: dateController.text);
+                      /*//وبعد ماتنفذ الفالديت وتقفل البوتن شيت هخليه يعملي انسيرت للبيانات دي داخل الداتا بيز بتاعتي
                       //هستدعي الفانكشن اللي عملتها اللي بتعمل انسيرت للداتا وامررلها الداتا بتاعتي علشان تحفظها
                       insertToDatabase(
                         title: titleController.text,
@@ -81,7 +79,7 @@ class HomeLayOut extends StatelessWidget {
                         Navigator.pop(context);
                         isBottomSheetShow = false;
 
-                        /*setState(() {
+                        *//*setState(() {
                     //نقلت الميثود اللي بتعمل جيت للداتا هنا علشان اول ما ااقفل البوتن شيت واسيف الداتا اخليه يعملها
                     //جيت اول ما يتقفل البوتن شيت فالداتا تظهر قدامي في نفس الوقت
                     //هعمل جيت للداتا بعد ما افتح الداتا بيز عن طريق الانت ستيت
@@ -90,8 +88,8 @@ class HomeLayOut extends StatelessWidget {
                       tasks = value;
                     });
                     fabIcon = Icons.edit;
-                  });*/
-                      });
+                  });*//*
+                      });*/
                     }
                   } else {
                     //هظهر البوتن شيت عند الضغط ع الفولتن بوتن
@@ -195,12 +193,13 @@ class HomeLayOut extends StatelessWidget {
                     })
                         .closed
                         .then((value) {
-                      isBottomSheetShow = false;
+                      cubit.changeBottomSheetState(isShow: false, icon: Icons.edit);
                       /*setState(() {
                       fabIcon = Icons.edit;
                     });*/
                     });
-                    isBottomSheetShow = true;
+                    cubit.changeBottomSheetState(isShow: true, icon: Icons.add);
+                    /*cubit.isBottomSheetShow = true;*/
                     /*setState(() {
                 fabIcon = Icons.add;
               });*/
@@ -239,7 +238,7 @@ class HomeLayOut extends StatelessWidget {
             //الخاص برده بالليست بحيث لما يبق في ايتم 0يعرض اسكرين رقم 0 وهكذا
             //هعمل كونديشن في البادي لو الليست علشان يعملي علامة تحميل هقول لو الليست بتساوي صفر اظهر العلامه لحد ما تبقي الليست اكبر من صفر اخفيها
             //ممكن استخدم باكيدج اسمه conditiolBuilder
-            body: tasks.length == 0
+            body: cubit.tasks.length == 0
                 ? Center(child: CircularProgressIndicator())
                 : cubit.screens[cubit.currentIndex],
           );
@@ -258,75 +257,5 @@ class HomeLayOut extends StatelessWidget {
 //6. update in database
 //7. delete in database
 
-//الافضل وككلين كود اني اعمل ميثود لكل حاجه بعملها يعني اكريت داتا بيز بميثود اعدل بميثود اضيف وهكذا
 
-//
-  void createDatabase() async {
-    //openDatabase برتجعلي قيمة نوعها فيوتشير داتا بيز فانا طبعا هستخدم معاها اسينك واويت وكمان هعمل متغير احفظ فيه القيمة دا
-    database = await openDatabase(
-      //في ريكوايرد باص يعني عنوان للداتا بيز بتاعتك ودا اجباري اكتب اي اسم وفي الاخر . دي بي
-      'todo.db',
-      //version دا الاصدار طبعا طالما لسه بتبدأ داتا بيز تبقي فيرجن واحد طيب ضيفت عليها جدول جديد او غيرت فيها حاجات يبقي تزود الاصدار
-      version: 1,
-      //onCreate بتديني اتنين فاليو اوبجيكت من الداتا بيز اللي عملتها والفيرجين بتاعه ودي بتستدعي لو بكريت داتا بيز جديده
-      //انما لو بعدل ع داتا بيز موجوده بالفعل مش هتظهر لانها اصلا موجوده هيظلي الاون اوبن علي طول
-      //استخدمها في اني بعمل فيها الجدول الاساسي اللي هيفضل ثابت معايا في الداتا بيز يعني بكريت فيها ثوابت مش قيم متغيره علشان كدا
-      //كل ما افتح نفس الداتا بيز مش هتظهر بعد كدا لانها خلاص شئ ثابت وانت بتملاه او بتعدل في القيم اللي بداخله
-      onCreate: (database, version) {
-        print("database created");
-        //execute بتاخد قيم نوعها فيوتشير فهستخدم معاها اسينك واويت او ممكن استخدم معاها زن زي ماشرحناها في التراي كاتش
-        //العواميد او العنوانين الثابته الرئيسية اللي هكريتها للجدول
-        //id integer
-        //title String
-        //date String
-        //time String
-        //status String
-        database
-            .execute(
-            'CREATE TABLE tasks (id INTEGER PRIMARY KEY , title TEXT,date TEXT,time TEXT,status TEXT)')
-            .then((value) {
-          print("table created");
-        }).catchError((onError) {
-          print("Error when creating table ${onError.toString()}");
-        });
-      },
-      //onOpen
-      onOpen: (database) {
-        print("database opened");
-        //هعمل جيت للداتا بعد ما افتح الداتا بيز عن طريق الانت ستيت
-        getDataFromDatabase(database).then((value) {
-          //هممر الفاليو اللي هي الداتا اللي في الداتا بيز داخل المتغير الليست ماب
-          tasks = value;
-        });
-      },
-    );
-  }
-
-  //هنعمل انسيؤت او هندخل بيانات للداتا بيز
-  Future insertToDatabase({
-    required String title,
-    required String date,
-    required String time,
-  }) async {
-    return await database.transaction((txn) {
-      //هستدعي اسم  التابل والعواميد اللي فيه اللي هدخل فيها البيانات طبعا مش هستدعي الااي دي لانه بريماري كي يعني هو هياخد كاي لواحده مع كل داتا هتدخل
-      txn
-          .rawInsert(
-          'INSERT INTO tasks(title,date,time,status)VALUES("$title","$date","$time","new")')
-          .then((value) {
-        print("$value inserted successfully");
-      }).catchError((onError) {
-        print("Error when inserting ${onError.toString()}");
-      });
-
-      return Future(() => null);
-    });
-  }
-
-  //Get from database
-  //همرر الداتا بيز في البراميتر علشانلما استدعي الداتا بتاعتي ميعملش ايرور لانه بينفئ الميثود الخاصه بالداتا بيز الاول وبعدين بيروح يعمل سيف للناتج داخل متغير الداتا بيز
-  //فكاني بقوله استني لما تخلص كل الميثود الخاصه بيك ولما تخلص وتحفظها في الداتا بيز  وبعدين اعملي ليها جيت
-  Future<List<Map>> getDataFromDatabase(database) async {
-    return tasks = await database.rawQuery('SELECT * FROM tasks');
-  }
 }
